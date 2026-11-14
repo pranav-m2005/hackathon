@@ -1,0 +1,4 @@
+#ip find code to run on vs code
+
+ipconfig getifaddr en0
+
