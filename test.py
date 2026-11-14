@@ -33,3 +33,5 @@ finally:
     if connection is not None and connection.is_connected():
         connection.close()
         print("Connection closed.")
+
+print('ok')
