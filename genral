@@ -1,0 +1,8 @@
+#ip find code to run on vs code
+
+ipconfig getifaddr en0
+
+client ip
+host="192.168.1.20" 
+
+
