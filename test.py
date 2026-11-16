@@ -5,7 +5,7 @@ cursor = None
 
 try:
     connection = mc.connect(
-        host="127.0.0.1",          # Your Mac's Wi-Fi IP
+        host="192.168.1.20",          # Your Mac's Wi-Fi IP
         port=3306,
         user="demo",
         password="demopassword",
