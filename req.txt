@@ -1,2 +1,0 @@
-databricks-connect
-databricks-sdk
