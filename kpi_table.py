@@ -1,160 +1,269 @@
 # ============================================================
-# KPI REPORT : PRINT ONLY (no tables created)
+# RETAILIQ - 5 MANDATORY KPIs AS A TEXT REPORT
+# Reads the gold tables, prints every KPI as text,
+# and also saves the report as kpi_report.txt next to this file.
 # ============================================================
+import os
+from datetime import datetime
+import pandas as pd
+
 S = "workspace.hackathon"
 
-def money(x): return f"AED {float(x or 0):,.2f}"
-def num(x):   return f"{int(x or 0):,}"
-def pct(a, b): return f"{(a * 100 / b) if b else 0:.2f}%"
-def line(name, value): print(f"  {name:<40} {value}")
+# ---------- settings: check them against the "DATA CHECK" section ----------
+RETURN_VALUES = ["yes", "y", "true", "1", "returned", "return"]   # return_option values that mean "returned"
+NON_DIGITAL   = ["cash", "cash on delivery", "cod", "unknown"]    # every other payment method counts as digital
+TOP_N = 5
+REPORT_FILE = os.path.join(os.getcwd(), "kpi_report.txt")
 
 
-# ---------------- 1. SALES (1 query) ----------------
-s = spark.sql(f"""
-SELECT SUM(amount_aed)              AS revenue,
-       COUNT(*)                     AS orders,
-       SUM(items_count)             AS items,
-       MAX(amount_aed)              AS max_order,
-       MIN(amount_aed)              AS min_order,
-       COUNT(DISTINCT customer_id)  AS buyers,
-       COUNT(DISTINCT merchant_category) AS categories
-FROM {S}.gold_product
-""").first()
+# ---------- print helpers (everything printed is also saved to the file) ----------
+out = []
+def p(text=""):
+    print(text)
+    out.append(str(text))
 
-revenue = float(s.revenue or 0)
-orders  = s.orders or 0
+def title(t):
+    p()
+    p("=" * 78)
+    p(t)
+    p("=" * 78)
 
+def show(df):
+    p(df.to_string(index=False) if len(df) else "  (no data)")
 
-# ---------------- 2. CUSTOMERS (1 query) ----------------
-c = spark.sql(f"""
-SELECT (SELECT COUNT(*) FROM {S}.gold_customer)                         AS total_customers,
-       (SELECT COUNT(DISTINCT shipping_city) FROM {S}.gold_customer)    AS cities,
-       (SELECT COUNT(*) FROM (SELECT customer_id FROM {S}.gold_product
-                              GROUP BY customer_id HAVING COUNT(*) > 1)) AS repeat_buyers
-""").first()
+def money(x):
+    return "n/a" if pd.isna(x) else f"{x:,.2f}"
 
-
-# ---------------- 3. TOP VALUES (1 query) ----------------
-tops = {r.kpi: r for r in spark.sql(f"""
-WITH allv AS (
-  SELECT 'city'     AS kpi, c.shipping_city AS val, CAST(SUM(p.amount_aed) AS DOUBLE) AS m
-  FROM {S}.gold_product p JOIN {S}.gold_customer c USING (customer_id) GROUP BY c.shipping_city
-  UNION ALL
-  SELECT 'category', merchant_category, CAST(SUM(amount_aed) AS DOUBLE) FROM {S}.gold_product GROUP BY merchant_category
-  UNION ALL
-  SELECT 'device',   device_type,   CAST(COUNT(*) AS DOUBLE) FROM {S}.gold_product GROUP BY device_type
-  UNION ALL
-  SELECT 'browser',  browser,       CAST(COUNT(*) AS DOUBLE) FROM {S}.gold_product GROUP BY browser
-  UNION ALL
-  SELECT 'return',   return_option, CAST(COUNT(*) AS DOUBLE) FROM {S}.gold_product GROUP BY return_option
-  UNION ALL
-  SELECT 'payment',  payment_method, CAST(COUNT(*) AS DOUBLE) FROM {S}.gold_payment GROUP BY payment_method
-  UNION ALL
-  SELECT 'refund',   refund_option,  CAST(COUNT(*) AS DOUBLE) FROM {S}.gold_payment GROUP BY refund_option
-)
-SELECT kpi, val, m, share FROM (
-  SELECT kpi, val, m,
-         m * 100 / SUM(m) OVER (PARTITION BY kpi)            AS share,
-         ROW_NUMBER() OVER (PARTITION BY kpi ORDER BY m DESC) AS rn
-  FROM allv
-) WHERE rn = 1
-""").collect()}
-
-def top(key, what):
-    r = tops.get(key)
-    return f"{r.val} ({r.share:.1f}% of {what})" if r else "n/a"
-
-
-# ---------------- 4. PAYMENTS (1 query) ----------------
-y = spark.sql(f"""
-SELECT COUNT(*)                       AS payments,
-       COUNT(DISTINCT payment_method) AS methods,
-       MIN(timestamp_utc)             AS first_ts,
-       MAX(timestamp_utc)             AS last_ts
-FROM {S}.gold_payment
-""").first()
-
-
-# ---------------- 5. DATA QUALITY (1 query) ----------------
-DATA_COLS = {
-    "customer": ["customer_id", "customer_name", "contact_number", "shipping_city", "billing_city"],
-    "product":  ["customer_id", "merchant_category", "amount_aed", "items_count",
-                 "device_type", "browser", "transaction_id", "return_option"],
-    "payment":  ["customer_id", "payment_method", "timestamp_utc", "refund_option"],
-}
-
-parts = []
-for e, cols in DATA_COLS.items():
-    empty_cond = " AND ".join(f"{col} IS NULL" for col in cols)
-    parts.append(f"""
-    SELECT '{e}' AS tbl,
-      (SELECT COUNT(*) FROM {S}.bronze_{e})                     AS bronze,
-      (SELECT COUNT(*) FROM {S}.bronze_{e} WHERE {empty_cond})  AS empty,
-      (SELECT COUNT(*) FROM {S}.silver_{e})                     AS silver,
-      (SELECT COUNT(*) FROM {S}.gold_{e}_rejected)              AS rejected,
-      (SELECT COUNT(*) FROM {S}.gold_{e})                       AS gold""")
-
-dq = spark.sql(" UNION ALL ".join(parts)).collect()
+def pct(x):
+    return "n/a" if pd.isna(x) else f"{x:.2f}%"
 
 
 # ============================================================
-# PRINT REPORT
+# 0. ONE BASE TABLE: order + payment (date, method) + customer (region)
+#    product and payment rows are linked by row_id + customer_id
 # ============================================================
-print("=" * 70)
-print("                 RETAIL SALES KPI REPORT")
-print("=" * 70)
+ret_list = ", ".join(f"'{v}'" for v in RETURN_VALUES)
 
-print("\nSALES")
-line("Total Revenue", money(revenue))
-line("Total Orders", num(orders))
-line("Average Order Value", money(revenue / orders if orders else 0))
-line("Total Items Sold", num(s.items))
-line("Average Items per Order", f"{(s.items or 0) / orders if orders else 0:.2f}")
-line("Highest Order Value", money(s.max_order))
-line("Lowest Order Value", money(s.min_order))
+base = spark.sql(f"""
+SELECT p.transaction_id,
+       p.customer_id,
+       c.customer_name,
+       p.merchant_category                 AS product,
+       p.amount_aed                        AS amount,
+       p.items_count,
+       p.return_option,
+       CASE WHEN lower(trim(p.return_option)) IN ({ret_list}) THEN 1 ELSE 0 END AS is_returned,
+       y.payment_method,
+       y.timestamp_utc                     AS ts,
+       CASE WHEN y.timestamp_utc IS NOT NULL
+            THEN concat(year(y.timestamp_utc), '-Q', quarter(y.timestamp_utc)) END AS qtr,
+       c.shipping_city                     AS region
+FROM {S}.gold_product p
+LEFT JOIN {S}.gold_payment  y ON p.row_id = y.row_id AND p.customer_id = y.customer_id
+LEFT JOIN {S}.gold_customer c ON p.customer_id = c.customer_id
+""").toPandas()
 
-print("\nCUSTOMERS")
-line("Total Customers", num(c.total_customers))
-line("Active Customers (bought at least once)", num(s.buyers))
-line("Active Customer Rate", pct(s.buyers, c.total_customers))
-line("Repeat Customer Rate", pct(c.repeat_buyers, s.buyers))
-line("Revenue per Customer", money(revenue / s.buyers if s.buyers else 0))
-line("Number of Cities", num(c.cities))
-line("Top City", top("city", "revenue"))
+base["amount"] = base["amount"].astype(float)
+base["returned_amount"] = base["amount"] * base["is_returned"]
 
-print("\nPRODUCTS")
-line("Number of Categories", num(s.categories))
-line("Top Category", top("category", "revenue"))
-line("Top Device", top("device", "orders"))
-line("Top Browser", top("browser", "orders"))
-line("Most Common Return Option", top("return", "orders"))
 
-print("\nPAYMENTS")
-line("Total Payments", num(y.payments))
-line("Number of Payment Methods", num(y.methods))
-line("Top Payment Method", top("payment", "payments"))
-line("Most Common Refund Option", top("refund", "payments"))
-if y.first_ts and y.last_ts:
-    line("Data Period", f"{y.first_ts:%d %b %Y} to {y.last_ts:%d %b %Y} "
-                        f"({(y.last_ts - y.first_ts).days} days)")
+# ============================================================
+# DATA CHECK
+# ============================================================
+title("RETAILIQ KPI REPORT  -  DATA CHECK")
+p(f"Orders in gold_product           : {len(base):,}")
+p(f"Orders linked to a payment/date  : {base['ts'].notna().sum():,}")
+p(f"Orders linked to a customer      : {base['region'].notna().sum():,}")
+p(f"\nreturn_option values (counted as returned: {RETURN_VALUES})")
+show(base["return_option"].value_counts(dropna=False).rename_axis("return_option").reset_index(name="orders"))
+p(f"\npayment_method values (non-digital: {NON_DIGITAL})")
+show(base["payment_method"].value_counts(dropna=False).rename_axis("payment_method").reset_index(name="orders"))
 
-print("\nDATA QUALITY (CLEANING RESULTS)")
-print(f"  {'table':<10}{'bronze':>9}{'empty':>9}{'real':>9}{'silver':>9}"
-      f"{'rejected':>10}{'gold':>9}{'score':>9}")
-tot = dict(bronze=0, empty=0, silver=0, rejected=0, gold=0)
-for r in dq:
-    real = r.bronze - r.empty
-    print(f"  {r.tbl:<10}{r.bronze:>9,}{r.empty:>9,}{real:>9,}{r.silver:>9,}"
-          f"{r.rejected:>10,}{r.gold:>9,}{pct(r.gold, real):>9}")
-    for k in tot:
-        tot[k] += getattr(r, k)
 
-real_total = tot["bronze"] - tot["empty"]
-print()
-line("Total Rows Ingested (Bronze)", num(tot["bronze"]))
-line("Empty Rows Removed", num(tot["empty"]))
-line("Duplicates / Missing Removed (Silver)", num(real_total - tot["silver"]))
-line("Rejected by Format Checks (Gold)", num(tot["rejected"]))
-line("Clean Rows in Gold", num(tot["gold"]))
-line("Overall Data Quality Score", pct(tot["gold"], real_total))
-print("=" * 70)
+# ============================================================
+# KPI 1: ORDERS VS RETURNS BY CUSTOMER AND PRODUCT (TOP 5)
+# ============================================================
+title("KPI 1: ORDERS VS RETURNS BY CUSTOMER AND PRODUCT (TOP 5)")
+
+def orders_returns(keys):
+    g = (base.groupby(keys, dropna=False)
+             .agg(orders=("transaction_id", "count"),
+                  returns=("is_returned", "sum"),
+                  sales_aed=("amount", "sum"))
+             .reset_index())
+    g["return_rate"] = g["returns"] / g["orders"] * 100
+    return g
+
+def fmt1(g):
+    g = g.copy()
+    g["sales_aed"] = g["sales_aed"].map(money)
+    g["return_rate"] = g["return_rate"].map(pct)
+    return g
+
+cust = orders_returns(["customer_id", "customer_name"])
+prod = orders_returns(["product"])
+
+total_orders, total_returns = len(base), int(base["is_returned"].sum())
+p(f"Overall: {total_orders:,} orders, {total_returns:,} returns, "
+  f"return rate {pct(total_returns * 100 / total_orders if total_orders else float('nan'))}")
+
+p(f"\nTop {TOP_N} customers by ORDERS:")
+show(fmt1(cust.sort_values(["orders", "sales_aed"], ascending=False).head(TOP_N)))
+p(f"\nTop {TOP_N} customers by RETURNS:")
+show(fmt1(cust.sort_values(["returns", "return_rate"], ascending=False).head(TOP_N)))
+p(f"\nTop {TOP_N} products by ORDERS:")
+show(fmt1(prod.sort_values(["orders", "sales_aed"], ascending=False).head(TOP_N)))
+p(f"\nTop {TOP_N} products by RETURNS:")
+show(fmt1(prod.sort_values(["returns", "return_rate"], ascending=False).head(TOP_N)))
+
+
+# ============================================================
+# KPI 2: REGION-WISE CUSTOMER BASE AND CUSTOMER GROWTH QoQ
+# ============================================================
+title("KPI 2: REGION-WISE CUSTOMER BASE AND CUSTOMER GROWTH QoQ")
+p("Region = customer's shipping city. Customers per quarter = customers who ordered in that quarter.")
+
+reg = (base.dropna(subset=["region"])
+           .groupby("region")["customer_id"].nunique()
+           .sort_values(ascending=False)
+           .reset_index(name="customers"))
+reg["share"] = (reg["customers"] / reg["customers"].sum() * 100).map(pct)
+top_regions = reg["region"].head(10).tolist()
+
+p(f"\nCustomer base by region (top 10 of {len(reg)} regions):")
+show(reg.head(10))
+
+q = (base.dropna(subset=["region", "qtr"])
+         .groupby(["region", "qtr"])["customer_id"].nunique()
+         .reset_index(name="customers")
+         .sort_values(["region", "qtr"]))
+q["growth_qoq"] = q.groupby("region")["customers"].pct_change() * 100
+
+if len(q):
+    top_q = q[q["region"].isin(top_regions)]
+    p("\nCustomers per quarter (top 10 regions):")
+    show(top_q.pivot(index="region", columns="qtr", values="customers")
+              .fillna(0).astype(int).loc[top_regions].reset_index())
+
+    p("\nCustomer growth QoQ % (top 10 regions):")
+    show(top_q.pivot(index="region", columns="qtr", values="growth_qoq")
+              .loc[top_regions].apply(lambda col: col.map(pct)).reset_index())
+
+    latest = q["qtr"].max()
+    lat = q[(q["qtr"] == latest) & q["growth_qoq"].notna()].sort_values("growth_qoq", ascending=False)
+    lat_f = lat.assign(growth_qoq=lat["growth_qoq"].map(pct))[["region", "customers", "growth_qoq"]]
+    p(f"\nFastest growing regions in {latest}:")
+    show(lat_f.head(5))
+    p(f"\nSlowest / declining regions in {latest}:")
+    show(lat_f.tail(5).iloc[::-1])
+else:
+    p("\n(no dates linked to orders, quarterly growth not available)")
+
+
+# ============================================================
+# KPI 3: PRODUCT-WISE SALES VS MARGIN
+# ============================================================
+title("KPI 3: PRODUCT-WISE SALES VS MARGIN")
+p("Note: the dataset has no cost price, so margin = net sales after returns / sales x 100.")
+
+pr = (base.groupby("product")
+          .agg(orders=("transaction_id", "count"),
+               sales=("amount", "sum"),
+               returned_sales=("returned_amount", "sum"))
+          .reset_index())
+pr["net_sales"] = pr["sales"] - pr["returned_sales"]
+pr["margin_pct"] = pr["net_sales"] / pr["sales"] * 100
+pr["sales_share"] = pr["sales"] / pr["sales"].sum() * 100
+
+med_sales, med_margin = pr["sales"].median(), pr["margin_pct"].median()
+def performance(r):
+    hi_s, hi_m = r["sales"] >= med_sales, r["margin_pct"] >= med_margin
+    if hi_s and hi_m:   return "Star: grow"
+    if hi_s:            return "High sales, low margin: fix returns"
+    if hi_m:            return "Low sales, high margin: promote"
+    return "Weak: review"
+pr["performance"] = pr.apply(performance, axis=1)
+
+pr = pr.sort_values("sales", ascending=False)
+show(pr.assign(sales=pr["sales"].map(money),
+               returned_sales=pr["returned_sales"].map(money),
+               net_sales=pr["net_sales"].map(money),
+               margin_pct=pr["margin_pct"].map(pct),
+               sales_share=pr["sales_share"].map(pct))
+       [["product", "orders", "sales", "sales_share", "returned_sales", "net_sales", "margin_pct", "performance"]])
+
+if len(pr):
+    best = pr.loc[pr["margin_pct"].idxmax()]
+    worst = pr.loc[pr["margin_pct"].idxmin()]
+    p(f"\nHighest margin product : {best['product']} ({pct(best['margin_pct'])})")
+    p(f"Lowest margin product  : {worst['product']} ({pct(worst['margin_pct'])})")
+
+
+# ============================================================
+# KPI 4: % OF DIGITAL PAYMENTS
+# ============================================================
+title("KPI 4: % OF DIGITAL PAYMENTS")
+p("Digital % = digital payment amount / total payment amount x 100")
+
+pay = base.dropna(subset=["payment_method"]).copy()
+pay["type"] = (~pay["payment_method"].str.lower().str.strip().isin(NON_DIGITAL)).map(
+    {True: "Digital", False: "Non-digital"})
+
+if len(pay):
+    dig = pay["type"] == "Digital"
+    p(f"\nDigital payments by AMOUNT : {pct(pay.loc[dig, 'amount'].sum() / pay['amount'].sum() * 100)}")
+    p(f"Digital payments by COUNT  : {pct(dig.mean() * 100)}")
+
+    m = (pay.groupby(["payment_method", "type"])
+            .agg(payments=("transaction_id", "count"), amount=("amount", "sum"))
+            .reset_index().sort_values("amount", ascending=False))
+    m["amount_share"] = m["amount"] / m["amount"].sum() * 100
+    p("\nBy payment method:")
+    show(m.assign(amount=m["amount"].map(money), amount_share=m["amount_share"].map(pct)))
+
+    t = pay.dropna(subset=["qtr"])
+    if len(t):
+        tq = (t.assign(dig_amt=t["amount"].where(t["type"] == "Digital", 0))
+               .groupby("qtr").agg(total=("amount", "sum"), digital=("dig_amt", "sum"))
+               .reset_index().sort_values("qtr"))
+        tq["digital_pct"] = (tq["digital"] / tq["total"] * 100).map(pct)
+        p("\nDigital % trend by quarter:")
+        show(tq.assign(total=tq["total"].map(money), digital=tq["digital"].map(money)))
+else:
+    p("\n(no payment methods linked to orders)")
+
+
+# ============================================================
+# KPI 5: SALES GROWTH QoQ
+# ============================================================
+title("KPI 5: SALES GROWTH QoQ")
+
+qs = (base.dropna(subset=["qtr"])
+          .groupby("qtr")
+          .agg(orders=("transaction_id", "count"), sales=("amount", "sum"))
+          .reset_index().sort_values("qtr"))
+qs["growth_qoq"] = qs["sales"].pct_change() * 100
+
+if len(qs):
+    show(qs.assign(sales=qs["sales"].map(money), growth_qoq=qs["growth_qoq"].map(pct)))
+    g = qs.dropna(subset=["growth_qoq"])
+    if len(g):
+        b, w = g.loc[g["growth_qoq"].idxmax()], g.loc[g["growth_qoq"].idxmin()]
+        p(f"\nBest quarter   : {b['qtr']} ({pct(b['growth_qoq'])})")
+        p(f"Worst quarter  : {w['qtr']} ({pct(w['growth_qoq'])})")
+        p(f"Average growth : {pct(g['growth_qoq'].mean())}")
+    p("Note: the first and last quarters may be partial if the data starts or ends mid-quarter.")
+else:
+    p("(no dates linked to orders, sales growth not available)")
+
+
+# ============================================================
+# SAVE THE REPORT AS TEXT
+# ============================================================
+title(f"Report generated {datetime.now():%d %b %Y %H:%M}")
+try:
+    with open(REPORT_FILE, "w") as f:
+        f.write("\n".join(out))
+    print(f"Saved to {REPORT_FILE}")
+except Exception as e:
+    print(f"Could not save the text file ({e}); copy the output above instead.")

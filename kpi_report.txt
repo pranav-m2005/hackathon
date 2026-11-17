@@ -1,0 +1,158 @@
+
+==============================================================================
+RETAILIQ KPI REPORT  -  DATA CHECK
+==============================================================================
+Orders in gold_product           : 10,000
+Orders linked to a payment/date  : 10,000
+Orders linked to a customer      : 10,000
+
+return_option values (counted as returned: ['yes', 'y', 'true', '1', 'returned', 'return'])
+return_option  orders
+          Yes    3391
+           No    3327
+      Unknown    3282
+
+payment_method values (non-digital: ['cash', 'cash on delivery', 'cod', 'unknown'])
+payment_method  orders
+          Card    7076
+        Paypal     800
+     Apple Pay     777
+    Google Pay     761
+ Bank Transfer     586
+
+==============================================================================
+KPI 1: ORDERS VS RETURNS BY CUSTOMER AND PRODUCT (TOP 5)
+==============================================================================
+Overall: 10,000 orders, 3,391 returns, return rate 33.91%
+
+Top 5 customers by ORDERS:
+customer_id   customer_name  orders  returns sales_aed return_rate
+  CUST02051   Karthik Singh       1        0 15,532.89       0.00%
+  CUST03708       Rahul Rao       1        0 13,917.63       0.00%
+  CUST05883 Farhan Kulkarni       1        0 13,678.93       0.00%
+  CUST08022  Sandhya Shetty       1        0  9,395.80       0.00%
+  CUST03606 Grace Fernandes       1        1  8,995.37     100.00%
+
+Top 5 customers by RETURNS:
+customer_id  customer_name  orders  returns sales_aed return_rate
+  CUST00001   Vijay Mathew       1        1     71.47     100.00%
+  CUST00004   Murugan Nair       1        1     99.41     100.00%
+  CUST00010     Divya Kaur       1        1     47.80     100.00%
+  CUST00016     Mary Patel       1        1     68.65     100.00%
+  CUST00020 Murugan George       1        1     42.23     100.00%
+
+Top 5 products by ORDERS:
+         product  orders  returns  sales_aed return_rate
+         Fashion    1862      618 321,383.22      33.19%
+     Electronics    1831      635 303,103.78      34.68%
+       Groceries    1539      534 255,253.83      34.70%
+   Digital Goods    1226      419 193,827.75      34.18%
+Home & Furniture     809      278 134,114.82      34.36%
+
+Top 5 products by RETURNS:
+         product  orders  returns  sales_aed return_rate
+     Electronics    1831      635 303,103.78      34.68%
+         Fashion    1862      618 321,383.22      33.19%
+       Groceries    1539      534 255,253.83      34.70%
+   Digital Goods    1226      419 193,827.75      34.18%
+Home & Furniture     809      278 134,114.82      34.36%
+
+==============================================================================
+KPI 2: REGION-WISE CUSTOMER BASE AND CUSTOMER GROWTH QoQ
+==============================================================================
+Region = customer's shipping city. Customers per quarter = customers who ordered in that quarter.
+
+Customer base by region (top 10 of 13 regions):
+        region  customers  share
+         Dubai       2430 24.30%
+     Abu Dhabi       1809 18.09%
+        Mumbai       1245 12.45%
+       Sharjah       1203 12.03%
+          Doha        748  7.48%
+       Karachi        572  5.72%
+         Ajman        523  5.23%
+Ras Al Khaimah        400  4.00%
+      Fujairah        304  3.04%
+        Manama        272  2.72%
+
+Customers per quarter (top 10 regions):
+        region  2024-Q1
+         Dubai     2430
+     Abu Dhabi     1809
+        Mumbai     1245
+       Sharjah     1203
+          Doha      748
+       Karachi      572
+         Ajman      523
+Ras Al Khaimah      400
+      Fujairah      304
+        Manama      272
+
+Customer growth QoQ % (top 10 regions):
+        region 2024-Q1
+         Dubai     n/a
+     Abu Dhabi     n/a
+        Mumbai     n/a
+       Sharjah     n/a
+          Doha     n/a
+       Karachi     n/a
+         Ajman     n/a
+Ras Al Khaimah     n/a
+      Fujairah     n/a
+        Manama     n/a
+
+Fastest growing regions in 2024-Q1:
+  (no data)
+
+Slowest / declining regions in 2024-Q1:
+  (no data)
+
+==============================================================================
+KPI 3: PRODUCT-WISE SALES VS MARGIN
+==============================================================================
+Note: the dataset has no cost price, so margin = net sales after returns / sales x 100.
+         product  orders      sales sales_share returned_sales  net_sales margin_pct                         performance
+         Fashion    1862 321,383.22      19.67%      97,071.84 224,311.38     69.80%                          Star: grow
+     Electronics    1831 303,103.78      18.55%     106,652.36 196,451.42     64.81% High sales, low margin: fix returns
+       Groceries    1539 255,253.83      15.63%      77,881.19 177,372.64     69.49%                          Star: grow
+   Digital Goods    1226 193,827.75      11.86%      63,187.38 130,640.37     67.40%                          Star: grow
+Home & Furniture     809 134,114.82       8.21%      44,504.26  89,610.56     66.82% High sales, low margin: fix returns
+          Beauty     670 112,041.22       6.86%      40,875.95  71,165.27     63.52%                        Weak: review
+          Sports     568  91,656.90       5.61%      29,750.13  61,906.77     67.54%     Low sales, high margin: promote
+        Pharmacy     578  82,629.11       5.06%      27,880.15  54,748.96     66.26%                        Weak: review
+          Travel     472  76,770.93       4.70%      20,154.35  56,616.58     73.75%     Low sales, high margin: promote
+            Toys     445  62,835.16       3.85%      24,092.08  38,743.08     61.66%                        Weak: review
+
+Highest margin product : Travel (73.75%)
+Lowest margin product  : Toys (61.66%)
+
+==============================================================================
+KPI 4: % OF DIGITAL PAYMENTS
+==============================================================================
+Digital % = digital payment amount / total payment amount x 100
+
+Digital payments by AMOUNT : 100.00%
+Digital payments by COUNT  : 100.00%
+
+By payment method:
+payment_method    type  payments       amount amount_share
+          Card Digital      7076 1,154,130.57       70.65%
+        Paypal Digital       800   136,686.47        8.37%
+    Google Pay Digital       761   125,696.51        7.69%
+     Apple Pay Digital       777   113,910.00        6.97%
+ Bank Transfer Digital       586   103,193.17        6.32%
+
+Digital % trend by quarter:
+    qtr        total      digital digital_pct
+2024-Q1 1,633,616.72 1,633,616.72     100.00%
+
+==============================================================================
+KPI 5: SALES GROWTH QoQ
+==============================================================================
+    qtr  orders        sales growth_qoq
+2024-Q1   10000 1,633,616.72        n/a
+Note: the first and last quarters may be partial if the data starts or ends mid-quarter.
+
+==============================================================================
+Report generated 17 Nov 2026 10:41
+==============================================================================
