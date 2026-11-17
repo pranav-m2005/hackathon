@@ -1,214 +1,160 @@
 # ============================================================
-# GOLD : KPI CARDS + DATA QUALITY (CLEANING RESULTS)
-# Creates: gold_kpi_cards, gold_data_quality
+# KPI REPORT : PRINT ONLY (no tables created)
 # ============================================================
-from pyspark.sql import functions as F
-from pyspark.sql.types import StructType, StructField, StringType, DoubleType, LongType, IntegerType
+S = "workspace.hackathon"
 
-SCHEMA = "workspace.hackathon"
-def t(name):
-    return f"{SCHEMA}.{name}"
-
-AUDIT = ["row_id", "source_file", "ingested_at"]
-
-gc = spark.table(t("gold_customer"))
-gp = spark.table(t("gold_product"))
-gy = spark.table(t("gold_payment"))
-
-kpis = []
+def money(x): return f"AED {float(x or 0):,.2f}"
+def num(x):   return f"{int(x or 0):,}"
+def pct(a, b): return f"{(a * 100 / b) if b else 0:.2f}%"
+def line(name, value): print(f"  {name:<40} {value}")
 
 
-# ---------------- helper functions ----------------
-def add(group, name, value, unit="", display_text=None):
-    """Add one KPI card."""
-    value = round(float(value or 0), 2)
-    if display_text is None:
-        if unit == "AED":
-            display_text = f"AED {value:,.2f}"
-        elif unit == "%":
-            display_text = f"{value:.2f}%"
-        elif value == int(value):
-            display_text = f"{int(value):,}"
-        else:
-            display_text = f"{value:,.2f}"
-    kpis.append((len(kpis) + 1, group, name, value, display_text, unit))
+# ---------------- 1. SALES (1 query) ----------------
+s = spark.sql(f"""
+SELECT SUM(amount_aed)              AS revenue,
+       COUNT(*)                     AS orders,
+       SUM(items_count)             AS items,
+       MAX(amount_aed)              AS max_order,
+       MIN(amount_aed)              AS min_order,
+       COUNT(DISTINCT customer_id)  AS buyers,
+       COUNT(DISTINCT merchant_category) AS categories
+FROM {S}.gold_product
+""").first()
 
-def top(df, col, metric_col=None):
-    """Most common / highest-revenue value of a column -> (value, metric, share %)."""
-    metric = F.sum(metric_col) if metric_col else F.count("*")
-    g = df.groupBy(col).agg(metric.alias("m"))
-    total = g.agg(F.sum("m")).first()[0] or 0
-    r = g.orderBy(F.desc("m")).first()
-    if r is None or total == 0:
-        return ("None", 0.0, 0.0)
-    return (str(r[col]), float(r["m"]), float(r["m"]) * 100 / total)
-
-def pct(a, b):
-    return (a * 100 / b) if b else 0.0
-
-def count_empty_rows(df):
-    cond = F.lit(True)
-    for c in df.columns:
-        if c not in AUDIT:
-            cond = cond & F.col(c).isNull()
-    return df.filter(cond).count()
+revenue = float(s.revenue or 0)
+orders  = s.orders or 0
 
 
-# ============================================================
-# 1. SALES KPIs
-# ============================================================
-s = gp.agg(
-    F.sum("amount_aed").alias("revenue"),
-    F.count("*").alias("orders"),
-    F.sum("items_count").alias("items"),
-    F.max("amount_aed").alias("max_order"),
-    F.min("amount_aed").alias("min_order"),
-).first()
-
-revenue, orders, items = float(s["revenue"] or 0), s["orders"], s["items"] or 0
-
-add("Sales", "Total Revenue", revenue, "AED")
-add("Sales", "Total Orders", orders)
-add("Sales", "Average Order Value", revenue / orders if orders else 0, "AED")
-add("Sales", "Total Items Sold", items)
-add("Sales", "Average Items per Order", items / orders if orders else 0)
-add("Sales", "Highest Order Value", s["max_order"], "AED")
-add("Sales", "Lowest Order Value", s["min_order"], "AED")
+# ---------------- 2. CUSTOMERS (1 query) ----------------
+c = spark.sql(f"""
+SELECT (SELECT COUNT(*) FROM {S}.gold_customer)                         AS total_customers,
+       (SELECT COUNT(DISTINCT shipping_city) FROM {S}.gold_customer)    AS cities,
+       (SELECT COUNT(*) FROM (SELECT customer_id FROM {S}.gold_product
+                              GROUP BY customer_id HAVING COUNT(*) > 1)) AS repeat_buyers
+""").first()
 
 
-# ============================================================
-# 2. CUSTOMER KPIs
-# ============================================================
-total_customers = gc.count()
-per_customer = gp.groupBy("customer_id").count()
-buyers = per_customer.count()
-repeat_buyers = per_customer.filter("count > 1").count()
+# ---------------- 3. TOP VALUES (1 query) ----------------
+tops = {r.kpi: r for r in spark.sql(f"""
+WITH allv AS (
+  SELECT 'city'     AS kpi, c.shipping_city AS val, CAST(SUM(p.amount_aed) AS DOUBLE) AS m
+  FROM {S}.gold_product p JOIN {S}.gold_customer c USING (customer_id) GROUP BY c.shipping_city
+  UNION ALL
+  SELECT 'category', merchant_category, CAST(SUM(amount_aed) AS DOUBLE) FROM {S}.gold_product GROUP BY merchant_category
+  UNION ALL
+  SELECT 'device',   device_type,   CAST(COUNT(*) AS DOUBLE) FROM {S}.gold_product GROUP BY device_type
+  UNION ALL
+  SELECT 'browser',  browser,       CAST(COUNT(*) AS DOUBLE) FROM {S}.gold_product GROUP BY browser
+  UNION ALL
+  SELECT 'return',   return_option, CAST(COUNT(*) AS DOUBLE) FROM {S}.gold_product GROUP BY return_option
+  UNION ALL
+  SELECT 'payment',  payment_method, CAST(COUNT(*) AS DOUBLE) FROM {S}.gold_payment GROUP BY payment_method
+  UNION ALL
+  SELECT 'refund',   refund_option,  CAST(COUNT(*) AS DOUBLE) FROM {S}.gold_payment GROUP BY refund_option
+)
+SELECT kpi, val, m, share FROM (
+  SELECT kpi, val, m,
+         m * 100 / SUM(m) OVER (PARTITION BY kpi)            AS share,
+         ROW_NUMBER() OVER (PARTITION BY kpi ORDER BY m DESC) AS rn
+  FROM allv
+) WHERE rn = 1
+""").collect()}
 
-add("Customers", "Total Customers", total_customers)
-add("Customers", "Active Customers (bought at least once)", buyers)
-add("Customers", "Active Customer Rate", pct(buyers, total_customers), "%")
-add("Customers", "Repeat Customer Rate", pct(repeat_buyers, buyers), "%")
-add("Customers", "Revenue per Customer", revenue / buyers if buyers else 0, "AED")
-
-sales_city = gp.join(gc.select("customer_id", "shipping_city"), "customer_id")
-city, city_rev, city_share = top(sales_city, "shipping_city", "amount_aed")
-add("Customers", "Top City by Revenue", city_share, "%", f"{city} ({city_share:.1f}% of revenue)")
-add("Customers", "Number of Cities", gc.select("shipping_city").distinct().count())
+def top(key, what):
+    r = tops.get(key)
+    return f"{r.val} ({r.share:.1f}% of {what})" if r else "n/a"
 
 
-# ============================================================
-# 3. PRODUCT KPIs
-# ============================================================
-cat, cat_rev, cat_share = top(gp, "merchant_category", "amount_aed")
-add("Products", "Top Category by Revenue", cat_share, "%", f"{cat} ({cat_share:.1f}% of revenue)")
-add("Products", "Number of Categories", gp.select("merchant_category").distinct().count())
+# ---------------- 4. PAYMENTS (1 query) ----------------
+y = spark.sql(f"""
+SELECT COUNT(*)                       AS payments,
+       COUNT(DISTINCT payment_method) AS methods,
+       MIN(timestamp_utc)             AS first_ts,
+       MAX(timestamp_utc)             AS last_ts
+FROM {S}.gold_payment
+""").first()
 
-dev, _, dev_share = top(gp, "device_type")
-add("Products", "Top Device", dev_share, "%", f"{dev} ({dev_share:.1f}% of orders)")
 
-brw, _, brw_share = top(gp, "browser")
-add("Products", "Top Browser", brw_share, "%", f"{brw} ({brw_share:.1f}% of orders)")
+# ---------------- 5. DATA QUALITY (1 query) ----------------
+DATA_COLS = {
+    "customer": ["customer_id", "customer_name", "contact_number", "shipping_city", "billing_city"],
+    "product":  ["customer_id", "merchant_category", "amount_aed", "items_count",
+                 "device_type", "browser", "transaction_id", "return_option"],
+    "payment":  ["customer_id", "payment_method", "timestamp_utc", "refund_option"],
+}
 
-ret, _, ret_share = top(gp, "return_option")
-add("Products", "Most Common Return Option", ret_share, "%", f"{ret} ({ret_share:.1f}% of orders)")
+parts = []
+for e, cols in DATA_COLS.items():
+    empty_cond = " AND ".join(f"{col} IS NULL" for col in cols)
+    parts.append(f"""
+    SELECT '{e}' AS tbl,
+      (SELECT COUNT(*) FROM {S}.bronze_{e})                     AS bronze,
+      (SELECT COUNT(*) FROM {S}.bronze_{e} WHERE {empty_cond})  AS empty,
+      (SELECT COUNT(*) FROM {S}.silver_{e})                     AS silver,
+      (SELECT COUNT(*) FROM {S}.gold_{e}_rejected)              AS rejected,
+      (SELECT COUNT(*) FROM {S}.gold_{e})                       AS gold""")
+
+dq = spark.sql(" UNION ALL ".join(parts)).collect()
 
 
 # ============================================================
-# 4. PAYMENT KPIs
+# PRINT REPORT
 # ============================================================
-total_payments = gy.count()
-add("Payments", "Total Payments", total_payments)
+print("=" * 70)
+print("                 RETAIL SALES KPI REPORT")
+print("=" * 70)
 
-pm, _, pm_share = top(gy, "payment_method")
-add("Payments", "Top Payment Method", pm_share, "%", f"{pm} ({pm_share:.1f}% of payments)")
-add("Payments", "Number of Payment Methods", gy.select("payment_method").distinct().count())
+print("\nSALES")
+line("Total Revenue", money(revenue))
+line("Total Orders", num(orders))
+line("Average Order Value", money(revenue / orders if orders else 0))
+line("Total Items Sold", num(s.items))
+line("Average Items per Order", f"{(s.items or 0) / orders if orders else 0:.2f}")
+line("Highest Order Value", money(s.max_order))
+line("Lowest Order Value", money(s.min_order))
 
-rf, _, rf_share = top(gy, "refund_option")
-add("Payments", "Most Common Refund Option", rf_share, "%", f"{rf} ({rf_share:.1f}% of payments)")
+print("\nCUSTOMERS")
+line("Total Customers", num(c.total_customers))
+line("Active Customers (bought at least once)", num(s.buyers))
+line("Active Customer Rate", pct(s.buyers, c.total_customers))
+line("Repeat Customer Rate", pct(c.repeat_buyers, s.buyers))
+line("Revenue per Customer", money(revenue / s.buyers if s.buyers else 0))
+line("Number of Cities", num(c.cities))
+line("Top City", top("city", "revenue"))
 
-d = gy.agg(F.min("timestamp_utc").alias("first"), F.max("timestamp_utc").alias("last")).first()
-if d["first"] and d["last"]:
-    days = (d["last"] - d["first"]).days
-    add("Payments", "Data Period (days)", days, "days",
-        f"{d['first']:%d %b %Y} to {d['last']:%d %b %Y} ({days} days)")
+print("\nPRODUCTS")
+line("Number of Categories", num(s.categories))
+line("Top Category", top("category", "revenue"))
+line("Top Device", top("device", "orders"))
+line("Top Browser", top("browser", "orders"))
+line("Most Common Return Option", top("return", "orders"))
 
+print("\nPAYMENTS")
+line("Total Payments", num(y.payments))
+line("Number of Payment Methods", num(y.methods))
+line("Top Payment Method", top("payment", "payments"))
+line("Most Common Refund Option", top("refund", "payments"))
+if y.first_ts and y.last_ts:
+    line("Data Period", f"{y.first_ts:%d %b %Y} to {y.last_ts:%d %b %Y} "
+                        f"({(y.last_ts - y.first_ts).days} days)")
 
-# ============================================================
-# 5. DATA QUALITY TABLE (results of cleaning)
-# ============================================================
-dq_rows = []
-for entity in ["customer", "product", "payment"]:
-    bronze = spark.table(t(f"bronze_{entity}"))
-    bronze_total = bronze.count()
-    empty = count_empty_rows(bronze)
-    silver = spark.table(t(f"silver_{entity}")).count()
-    gold = spark.table(t(f"gold_{entity}")).count()
-    rejected = spark.table(t(f"gold_{entity}_rejected")).count()
+print("\nDATA QUALITY (CLEANING RESULTS)")
+print(f"  {'table':<10}{'bronze':>9}{'empty':>9}{'real':>9}{'silver':>9}"
+      f"{'rejected':>10}{'gold':>9}{'score':>9}")
+tot = dict(bronze=0, empty=0, silver=0, rejected=0, gold=0)
+for r in dq:
+    real = r.bronze - r.empty
+    print(f"  {r.tbl:<10}{r.bronze:>9,}{r.empty:>9,}{real:>9,}{r.silver:>9,}"
+          f"{r.rejected:>10,}{r.gold:>9,}{pct(r.gold, real):>9}")
+    for k in tot:
+        tot[k] += getattr(r, k)
 
-    real_rows = bronze_total - empty
-    removed_silver = real_rows - silver          # duplicates + missing required values
-
-    dq_rows.append((
-        entity, bronze_total, empty, real_rows,
-        removed_silver, silver, rejected, gold,
-        round(pct(gold, real_rows), 2),
-    ))
-
-dq_schema = StructType([
-    StructField("table_name", StringType()),
-    StructField("bronze_rows", LongType()),
-    StructField("empty_rows_removed", LongType()),
-    StructField("real_rows", LongType()),
-    StructField("duplicates_or_missing_removed", LongType()),
-    StructField("silver_rows", LongType()),
-    StructField("rejected_in_gold", LongType()),
-    StructField("gold_rows", LongType()),
-    StructField("data_quality_score_pct", DoubleType()),
-])
-
-dq = (spark.createDataFrame(dq_rows, dq_schema)
-      .withColumn("calculated_at", F.current_timestamp()))
-
-dq.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(t("gold_data_quality"))
-
-
-# ============================================================
-# 6. DATA QUALITY KPI CARDS (totals across all tables)
-# ============================================================
-tot = {k: sum(r[i] for r in dq_rows) for k, i in
-       [("bronze", 1), ("empty", 2), ("real", 3), ("removed", 4), ("silver", 5), ("rejected", 6), ("gold", 7)]}
-
-add("Data Quality", "Total Rows Ingested (Bronze)", tot["bronze"])
-add("Data Quality", "Empty Rows Removed", tot["empty"])
-add("Data Quality", "Duplicates / Missing Values Removed (Silver)", tot["removed"])
-add("Data Quality", "Rows Rejected by Format Checks (Gold)", tot["rejected"])
-add("Data Quality", "Clean Rows in Gold", tot["gold"])
-add("Data Quality", "Overall Data Quality Score", pct(tot["gold"], tot["real"]), "%")
-
-
-# ============================================================
-# 7. SAVE KPI CARDS TABLE
-# ============================================================
-kpi_schema = StructType([
-    StructField("sort_order", IntegerType()),
-    StructField("kpi_group", StringType()),
-    StructField("kpi_name", StringType()),
-    StructField("kpi_value", DoubleType()),
-    StructField("kpi_display", StringType()),
-    StructField("unit", StringType()),
-])
-
-kpi_df = (spark.createDataFrame(kpis, kpi_schema)
-          .withColumn("calculated_at", F.current_timestamp()))
-
-kpi_df.write.mode("overwrite").option("overwriteSchema", "true").saveAsTable(t("gold_kpi_cards"))
-
-
-# ============================================================
-# 8. SHOW RESULTS
-# ============================================================
-print("===== KPI CARDS =====")
-display(spark.table(t("gold_kpi_cards")).orderBy("sort_order"))
-
-print("===== DATA QUALITY (CLEANING RESULTS) =====")
-display(spark.table(t("gold_data_quality")))
+real_total = tot["bronze"] - tot["empty"]
+print()
+line("Total Rows Ingested (Bronze)", num(tot["bronze"]))
+line("Empty Rows Removed", num(tot["empty"]))
+line("Duplicates / Missing Removed (Silver)", num(real_total - tot["silver"]))
+line("Rejected by Format Checks (Gold)", num(tot["rejected"]))
+line("Clean Rows in Gold", num(tot["gold"]))
+line("Overall Data Quality Score", pct(tot["gold"], real_total))
+print("=" * 70)
