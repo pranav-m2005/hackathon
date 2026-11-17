@@ -630,7 +630,7 @@
           },
           "position": {
             "x": 0,
-            "y": 2,
+            "y": 1,
             "width": 3,
             "height": 3
           }
@@ -680,7 +680,7 @@
           },
           "position": {
             "x": 3,
-            "y": 2,
+            "y": 1,
             "width": 2,
             "height": 3
           }
@@ -729,7 +729,7 @@
           },
           "position": {
             "x": 5,
-            "y": 2,
+            "y": 1,
             "width": 2,
             "height": 3
           }
@@ -780,7 +780,7 @@
           },
           "position": {
             "x": 7,
-            "y": 2,
+            "y": 1,
             "width": 3,
             "height": 3
           }
@@ -853,7 +853,7 @@
           },
           "position": {
             "x": 0,
-            "y": 5,
+            "y": 4,
             "width": 12,
             "height": 6
           }
@@ -902,7 +902,7 @@
           },
           "position": {
             "x": 10,
-            "y": 2,
+            "y": 1,
             "width": 2,
             "height": 3
           }
@@ -927,7 +927,7 @@
             "x": 0,
             "y": 0,
             "width": 12,
-            "height": 2
+            "height": 1
           }
         },
         {
@@ -952,7 +952,7 @@
           },
           "position": {
             "x": 0,
-            "y": 11,
+            "y": 10,
             "width": 6,
             "height": 4
           }
@@ -979,7 +979,7 @@
           },
           "position": {
             "x": 6,
-            "y": 11,
+            "y": 10,
             "width": 6,
             "height": 4
           }
@@ -1002,9 +1002,9 @@
           },
           "position": {
             "x": 0,
-            "y": 15,
+            "y": 14,
             "width": 12,
-            "height": 2
+            "height": 1
           }
         }
       ],
@@ -1091,7 +1091,7 @@
           },
           "position": {
             "x": 0,
-            "y": 2,
+            "y": 1,
             "width": 12,
             "height": 6
           }
@@ -1121,30 +1121,41 @@
             "spec": {
               "frame": {
                 "showTitle": true,
-                "title": "Return Rate by Product"
+                "title": {
+                  "fields": [],
+                  "value": "Return Rate by Product"
+                }
               },
               "version": 3,
+              "mark": {
+                "colors": [
+                  "#2272B4"
+                ]
+              },
               "widgetType": "bar",
               "encodings": {
                 "x": {
                   "fieldName": "merchant_category",
-                  "displayName": "merchant_category",
+                  "displayName": "Product Category",
                   "scale": {
-                    "type": "categorical"
+                    "type": "categorical",
+                    "sort": {
+                      "by": "y-reversed"
+                    }
                   }
                 },
                 "y": {
                   "fieldName": "measure(return_rate_pct)",
-                  "displayName": "return_rate_pct",
+                  "format": {
+                    "decimalPlaces": {
+                      "places": 0,
+                      "type": "exact"
+                    },
+                    "type": "number-percent"
+                  },
+                  "displayName": "Return Rate %",
                   "scale": {
                     "type": "quantitative"
-                  }
-                },
-                "color": {
-                  "fieldName": "merchant_category",
-                  "displayName": "merchant_category",
-                  "scale": {
-                    "type": "categorical"
                   }
                 }
               },
@@ -1155,7 +1166,7 @@
           },
           "position": {
             "x": 0,
-            "y": 8,
+            "y": 7,
             "width": 6,
             "height": 5
           }
@@ -1185,30 +1196,42 @@
             "spec": {
               "frame": {
                 "showTitle": true,
-                "title": "Net Sales by Product (AED)"
+                "title": {
+                  "fields": [],
+                  "value": "Net Sales by Product (AED)"
+                }
               },
               "version": 3,
+              "mark": {
+                "colors": [
+                  "#2272B4"
+                ]
+              },
               "widgetType": "bar",
               "encodings": {
                 "x": {
                   "fieldName": "merchant_category",
-                  "displayName": "merchant_category",
+                  "displayName": "Product Category",
                   "scale": {
-                    "type": "categorical"
+                    "type": "categorical",
+                    "sort": {
+                      "by": "y-reversed"
+                    }
                   }
                 },
                 "y": {
                   "fieldName": "measure(net_sales_after_returns)",
-                  "displayName": "net_sales_after_returns",
+                  "format": {
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "places": 0,
+                      "type": "exact"
+                    },
+                    "type": "number-plain"
+                  },
+                  "displayName": "Net Sales (AED)",
                   "scale": {
                     "type": "quantitative"
-                  }
-                },
-                "color": {
-                  "fieldName": "merchant_category",
-                  "displayName": "merchant_category",
-                  "scale": {
-                    "type": "categorical"
                   }
                 }
               },
@@ -1219,7 +1242,7 @@
           },
           "position": {
             "x": 6,
-            "y": 8,
+            "y": 7,
             "width": 6,
             "height": 5
           }
@@ -1305,7 +1328,7 @@
           },
           "position": {
             "x": 0,
-            "y": 13,
+            "y": 12,
             "width": 12,
             "height": 6
           }
@@ -1330,7 +1353,7 @@
             "x": 0,
             "y": 0,
             "width": 12,
-            "height": 2
+            "height": 1
           }
         },
         {
@@ -1354,7 +1377,7 @@
           },
           "position": {
             "x": 0,
-            "y": 19,
+            "y": 18,
             "width": 12,
             "height": 3
           }
@@ -1370,7 +1393,9 @@
                   "lines": [
                     "*Return rate counts only return_option = 'Yes'; 3,282 orders (32.8%) are 'Unknown'.*\n",
                     "\n",
-                    "*No cost data: margin = net sales after returns / sales.*"
+                    "*No cost data: margin = net sales after returns / sales.*\n",
+                    "\n",
+                    "*Top 5 charts use pre-aggregated data and do not respond to global filters.*"
                   ],
                   "fields": []
                 }
@@ -1379,9 +1404,9 @@
           },
           "position": {
             "x": 0,
-            "y": 22,
+            "y": 21,
             "width": 12,
-            "height": 2
+            "height": 3
           }
         }
       ],
@@ -1437,7 +1462,7 @@
           },
           "position": {
             "x": 0,
-            "y": 2,
+            "y": 1,
             "width": 3,
             "height": 3
           }
@@ -1467,30 +1492,42 @@
             "spec": {
               "frame": {
                 "showTitle": true,
-                "title": "Customer Base by Region"
+                "title": {
+                  "fields": [],
+                  "value": "Customer Base by Region"
+                }
               },
               "version": 3,
+              "mark": {
+                "colors": [
+                  "#2272B4"
+                ]
+              },
               "widgetType": "bar",
               "encodings": {
                 "x": {
                   "fieldName": "region",
-                  "displayName": "region",
+                  "displayName": "Region",
                   "scale": {
-                    "type": "categorical"
+                    "type": "categorical",
+                    "sort": {
+                      "by": "y-reversed"
+                    }
                   }
                 },
                 "y": {
                   "fieldName": "measure(customers)",
-                  "displayName": "customers",
+                  "format": {
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "places": 0,
+                      "type": "exact"
+                    },
+                    "type": "number-plain"
+                  },
+                  "displayName": "Customers",
                   "scale": {
                     "type": "quantitative"
-                  }
-                },
-                "color": {
-                  "fieldName": "region",
-                  "displayName": "region",
-                  "scale": {
-                    "type": "categorical"
                   }
                 }
               },
@@ -1501,7 +1538,7 @@
           },
           "position": {
             "x": 0,
-            "y": 5,
+            "y": 4,
             "width": 6,
             "height": 5
           }
@@ -1551,7 +1588,7 @@
           },
           "position": {
             "x": 3,
-            "y": 2,
+            "y": 1,
             "width": 3,
             "height": 3
           }
@@ -1581,21 +1618,32 @@
             "spec": {
               "frame": {
                 "showTitle": true,
-                "title": "Active Customers by Month"
+                "title": {
+                  "fields": [],
+                  "value": "Active Customers by Month"
+                }
               },
               "version": 3,
               "widgetType": "line",
               "encodings": {
                 "x": {
                   "fieldName": "month",
-                  "displayName": "month",
+                  "displayName": "Month",
                   "scale": {
                     "type": "temporal"
                   }
                 },
                 "y": {
                   "fieldName": "measure(monthly_customers)",
-                  "displayName": "monthly_customers",
+                  "format": {
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "places": 0,
+                      "type": "exact"
+                    },
+                    "type": "number-plain"
+                  },
+                  "displayName": "Customers",
                   "scale": {
                     "type": "quantitative"
                   }
@@ -1608,7 +1656,7 @@
           },
           "position": {
             "x": 6,
-            "y": 5,
+            "y": 4,
             "width": 6,
             "height": 5
           }
@@ -1658,7 +1706,7 @@
           },
           "position": {
             "x": 6,
-            "y": 2,
+            "y": 1,
             "width": 3,
             "height": 3
           }
@@ -1688,30 +1736,42 @@
             "spec": {
               "frame": {
                 "showTitle": true,
-                "title": "Sales by Region (AED)"
+                "title": {
+                  "fields": [],
+                  "value": "Sales by Region (AED)"
+                }
               },
               "version": 3,
+              "mark": {
+                "colors": [
+                  "#2272B4"
+                ]
+              },
               "widgetType": "bar",
               "encodings": {
                 "x": {
                   "fieldName": "region",
-                  "displayName": "region",
+                  "displayName": "Region",
                   "scale": {
-                    "type": "categorical"
+                    "type": "categorical",
+                    "sort": {
+                      "by": "y-reversed"
+                    }
                   }
                 },
                 "y": {
                   "fieldName": "measure(total_sales)",
-                  "displayName": "total_sales",
+                  "format": {
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "places": 0,
+                      "type": "exact"
+                    },
+                    "type": "number-plain"
+                  },
+                  "displayName": "Sales (AED)",
                   "scale": {
                     "type": "quantitative"
-                  }
-                },
-                "color": {
-                  "fieldName": "region",
-                  "displayName": "region",
-                  "scale": {
-                    "type": "categorical"
                   }
                 }
               },
@@ -1722,7 +1782,7 @@
           },
           "position": {
             "x": 0,
-            "y": 10,
+            "y": 9,
             "width": 6,
             "height": 5
           }
@@ -1771,7 +1831,7 @@
           },
           "position": {
             "x": 9,
-            "y": 2,
+            "y": 1,
             "width": 3,
             "height": 3
           }
@@ -1794,10 +1854,6 @@
                       "expression": "MEASURE(`customers`)"
                     },
                     {
-                      "name": "measure(orders)",
-                      "expression": "MEASURE(`orders`)"
-                    },
-                    {
                       "name": "measure(total_sales)",
                       "expression": "MEASURE(`total_sales`)"
                     }
@@ -1809,7 +1865,10 @@
             "spec": {
               "frame": {
                 "showTitle": true,
-                "title": "Region Performance"
+                "title": {
+                  "fields": [],
+                  "value": "Region Performance"
+                }
               },
               "version": 2,
               "widgetType": "table",
@@ -1820,9 +1879,6 @@
                   },
                   {
                     "fieldName": "measure(customers)"
-                  },
-                  {
-                    "fieldName": "measure(orders)"
                   },
                   {
                     "fieldName": "measure(total_sales)"
@@ -1836,7 +1892,7 @@
           },
           "position": {
             "x": 6,
-            "y": 10,
+            "y": 9,
             "width": 6,
             "height": 5
           }
@@ -1910,7 +1966,7 @@
           },
           "position": {
             "x": 0,
-            "y": 15,
+            "y": 14,
             "width": 12,
             "height": 6
           }
@@ -1935,7 +1991,7 @@
             "x": 0,
             "y": 0,
             "width": 12,
-            "height": 2
+            "height": 1
           }
         },
         {
@@ -1958,9 +2014,34 @@
           },
           "position": {
             "x": 0,
-            "y": 21,
+            "y": 20,
             "width": 12,
-            "height": 3
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "footnotes",
+            "spec": {
+              "version": 1,
+              "widgetType": "text",
+              "encodings": {
+                "text": {
+                  "fields": [],
+                  "lines": [
+                    "*Sales data runs through Feb 6, 2024 — February figures and MoM growth reflect a partial month.*\n",
+                    "\n",
+                    "*Top 5 charts use pre-aggregated data and do not respond to global filters.*"
+                  ]
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 22,
+            "width": 12,
+            "height": 2
           }
         }
       ],
@@ -2015,7 +2096,7 @@
           },
           "position": {
             "x": 3,
-            "y": 2,
+            "y": 1,
             "width": 3,
             "height": 3
           }
@@ -2064,7 +2145,7 @@
           },
           "position": {
             "x": 6,
-            "y": 2,
+            "y": 1,
             "width": 3,
             "height": 3
           }
@@ -2115,7 +2196,7 @@
           },
           "position": {
             "x": 9,
-            "y": 2,
+            "y": 1,
             "width": 3,
             "height": 3
           }
@@ -2145,21 +2226,31 @@
             "spec": {
               "frame": {
                 "showTitle": true,
-                "title": "Digital Payments % Trend by Month"
+                "title": {
+                  "fields": [],
+                  "value": "Digital Payments % Trend by Month"
+                }
               },
               "version": 3,
               "widgetType": "line",
               "encodings": {
                 "x": {
                   "fieldName": "month",
-                  "displayName": "month",
+                  "displayName": "Month",
                   "scale": {
                     "type": "temporal"
                   }
                 },
                 "y": {
                   "fieldName": "measure(digital_payments_pct)",
-                  "displayName": "digital_payments_pct",
+                  "format": {
+                    "decimalPlaces": {
+                      "places": 0,
+                      "type": "exact"
+                    },
+                    "type": "number-percent"
+                  },
+                  "displayName": "Digital Payments %",
                   "scale": {
                     "type": "quantitative"
                   }
@@ -2172,7 +2263,7 @@
           },
           "position": {
             "x": 0,
-            "y": 5,
+            "y": 4,
             "width": 6,
             "height": 5
           }
@@ -2202,21 +2293,32 @@
             "spec": {
               "frame": {
                 "showTitle": true,
-                "title": "Sales Trend by Month (AED)"
+                "title": {
+                  "value": "Sales Trend by Month (AED)",
+                  "fields": []
+                }
               },
               "version": 3,
               "widgetType": "line",
               "encodings": {
                 "x": {
                   "fieldName": "month",
-                  "displayName": "month",
+                  "displayName": "Month",
                   "scale": {
                     "type": "temporal"
                   }
                 },
                 "y": {
                   "fieldName": "measure(total_amount)",
-                  "displayName": "total_amount",
+                  "format": {
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "places": 0,
+                      "type": "exact"
+                    },
+                    "type": "number-plain"
+                  },
+                  "displayName": "Sales (AED)",
                   "scale": {
                     "type": "quantitative"
                   }
@@ -2229,7 +2331,7 @@
           },
           "position": {
             "x": 6,
-            "y": 5,
+            "y": 4,
             "width": 6,
             "height": 5
           }
@@ -2259,7 +2361,10 @@
             "spec": {
               "frame": {
                 "showTitle": true,
-                "title": "Payment Method Share (AED)"
+                "title": {
+                  "fields": [],
+                  "value": "Payment Method Share (AED)"
+                }
               },
               "version": 3,
               "widgetType": "pie",
@@ -2269,11 +2374,11 @@
                   "scale": {
                     "type": "quantitative"
                   },
-                  "displayName": "total_amount"
+                  "displayName": "Amount (AED)"
                 },
                 "color": {
                   "fieldName": "payment_method",
-                  "displayName": "payment_method",
+                  "displayName": "Payment Method",
                   "scale": {
                     "type": "categorical"
                   }
@@ -2286,7 +2391,7 @@
           },
           "position": {
             "x": 0,
-            "y": 10,
+            "y": 9,
             "width": 6,
             "height": 5
           }
@@ -2365,7 +2470,7 @@
           },
           "position": {
             "x": 6,
-            "y": 10,
+            "y": 9,
             "width": 6,
             "height": 5
           }
@@ -2415,7 +2520,7 @@
           },
           "position": {
             "x": 0,
-            "y": 2,
+            "y": 1,
             "width": 3,
             "height": 3
           }
@@ -2440,7 +2545,7 @@
             "x": 0,
             "y": 0,
             "width": 12,
-            "height": 2
+            "height": 1
           }
         },
         {
@@ -2463,9 +2568,9 @@
           },
           "position": {
             "x": 0,
-            "y": 15,
+            "y": 14,
             "width": 12,
-            "height": 3
+            "height": 2
           }
         }
       ],
