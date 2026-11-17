@@ -2521,6 +2521,98 @@
             "width": 1,
             "height": 2
           }
+        },
+        {
+          "widget": {
+            "name": "filter_region",
+            "queries": [
+              {
+                "name": "dashboards/01f1e271d4401b289e5156ca5405b67f/datasets/01f1e27811291df28ecf4afdf1cab3f4_region",
+                "query": {
+                  "datasetName": "customers_regions",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "region_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Region"
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "region",
+                    "queryName": "dashboards/01f1e271d4401b289e5156ca5405b67f/datasets/01f1e27811291df28ecf4afdf1cab3f4_region"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 1,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "filter_payment_method",
+            "queries": [
+              {
+                "name": "dashboards/01f1e271d4401b289e5156ca5405b67f/datasets/01f1e277839d1a42b88d729db3469371_payment_method",
+                "query": {
+                  "datasetName": "digital_payments",
+                  "fields": [
+                    {
+                      "name": "payment_method",
+                      "expression": "`payment_method`"
+                    },
+                    {
+                      "name": "payment_method_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Payment Method"
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "payment_method",
+                    "queryName": "dashboards/01f1e271d4401b289e5156ca5405b67f/datasets/01f1e277839d1a42b88d729db3469371_payment_method"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 4,
+            "width": 1,
+            "height": 2
+          }
         }
       ],
       "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
