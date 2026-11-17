@@ -26,7 +26,19 @@
       "displayName": "bronze_payment",
       "config": {
         "version": "1.1",
-        "source": "workspace.hackathon.bronze_payment"
+        "source": "workspace.hackathon.bronze_payment",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "displayName": "Count"
+          }
+        ]
       }
     },
     {
@@ -34,7 +46,19 @@
       "displayName": "bronze_product",
       "config": {
         "version": "1.1",
-        "source": "workspace.hackathon.bronze_product"
+        "source": "workspace.hackathon.bronze_product",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "displayName": "Count"
+          }
+        ]
       }
     },
     {
@@ -84,7 +108,19 @@
       "displayName": "gold_payment",
       "config": {
         "version": "1.1",
-        "source": "workspace.hackathon.gold_payment"
+        "source": "workspace.hackathon.gold_payment",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "displayName": "Count"
+          }
+        ]
       }
     },
     {
@@ -92,7 +128,19 @@
       "displayName": "gold_payment_rejected",
       "config": {
         "version": "1.1",
-        "source": "workspace.hackathon.gold_payment_rejected"
+        "source": "workspace.hackathon.gold_payment_rejected",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "displayName": "Count"
+          }
+        ]
       }
     },
     {
@@ -110,7 +158,6 @@
           {
             "name": "count",
             "expr": "COUNT(*)",
-            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
             "displayName": "Count"
           },
           {
@@ -153,6 +200,18 @@
                 "places": 2.0
               }
             }
+          },
+          {
+            "name": "margin_pct",
+            "expr": "MEASURE(`net_sales_after_returns`) / MEASURE(`total_sales`)",
+            "displayName": "Margin %",
+            "format": {
+              "type": "percentage",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
           }
         ]
       }
@@ -183,7 +242,19 @@
       "displayName": "silver_customer",
       "config": {
         "version": "1.1",
-        "source": "workspace.hackathon.silver_customer"
+        "source": "workspace.hackathon.silver_customer",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "displayName": "Count"
+          }
+        ]
       }
     },
     {
@@ -191,7 +262,19 @@
       "displayName": "silver_payment",
       "config": {
         "version": "1.1",
-        "source": "workspace.hackathon.silver_payment"
+        "source": "workspace.hackathon.silver_payment",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "displayName": "Count"
+          }
+        ]
       }
     },
     {
@@ -235,6 +318,255 @@
           {
             "name": "product_rank",
             "expr": "product_rank"
+          }
+        ],
+        "measures": [
+          {
+            "name": "total_value",
+            "expr": "SUM(value)",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "digital_payments",
+      "displayName": "Digital Payments",
+      "config": {
+        "version": "1.1",
+        "source": "SELECT p.row_id, p.customer_id, p.amount_aed, y.payment_method, y.timestamp_utc AS ts\nFROM workspace.hackathon.gold_product p\nINNER JOIN workspace.hackathon.gold_payment y\n  ON p.row_id = y.row_id AND p.customer_id = y.customer_id\nWHERE y.payment_method IS NOT NULL\n",
+        "dimensions": [
+          {
+            "name": "payment_method",
+            "expr": "payment_method",
+            "displayName": "Payment Method"
+          },
+          {
+            "name": "month",
+            "expr": "CAST(DATE_TRUNC('MONTH', ts) AS DATE)",
+            "displayName": "Month"
+          },
+          {
+            "name": "payment_type",
+            "expr": "CASE WHEN lower(trim(payment_method)) IN ('cash', 'cash on delivery', 'cod', 'unknown') THEN 'Non-digital' ELSE 'Digital' END",
+            "displayName": "Payment Type"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "displayName": "Orders"
+          },
+          {
+            "name": "total_amount",
+            "expr": "SUM(amount_aed)",
+            "displayName": "Total Amount (AED)",
+            "format": {
+              "type": "currency",
+              "currencyCode": "AED",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          },
+          {
+            "name": "digital_amount",
+            "expr": "SUM(CASE WHEN lower(trim(payment_method)) IN ('cash', 'cash on delivery', 'cod', 'unknown') THEN 0.0 ELSE amount_aed END)",
+            "displayName": "Digital Amount (AED)",
+            "format": {
+              "type": "currency",
+              "currencyCode": "AED",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          },
+          {
+            "name": "digital_payments_pct",
+            "expr": "MEASURE(`digital_amount`) / MEASURE(`total_amount`)",
+            "displayName": "Digital Payments %",
+            "format": {
+              "type": "percentage",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          },
+          {
+            "name": "digital_count_pct",
+            "expr": "SUM(CASE WHEN lower(trim(payment_method)) IN ('cash', 'cash on delivery', 'cod', 'unknown') THEN 0 ELSE 1 END) / COUNT(*)",
+            "displayName": "Digital Payments % (Count)",
+            "format": {
+              "type": "percentage",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          },
+          {
+            "displayName": "Monthly Sales (AED)",
+            "format": {
+              "type": "currency",
+              "currencyCode": "AED",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            },
+            "window": [
+              {
+                "order": "month",
+                "range": "current"
+              }
+            ],
+            "name": "monthly_sales",
+            "expr": "SUM(amount_aed)"
+          },
+          {
+            "displayName": "Previous Month Sales (AED)",
+            "format": {
+              "type": "currency",
+              "currencyCode": "AED",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            },
+            "window": [
+              {
+                "order": "month",
+                "range": "current",
+                "offset": "-1 month"
+              }
+            ],
+            "name": "monthly_sales_prev",
+            "expr": "SUM(amount_aed)"
+          },
+          {
+            "name": "mom_growth_pct",
+            "expr": "try_divide(MEASURE(`monthly_sales`) - MEASURE(`monthly_sales_prev`), MEASURE(`monthly_sales_prev`))",
+            "displayName": "Sales Growth MoM",
+            "format": {
+              "type": "percentage",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "customers_regions",
+      "displayName": "Customers & Regions",
+      "config": {
+        "version": "1.1",
+        "source": "SELECT p.customer_id, c.customer_name, c.shipping_city AS region,\n       y.timestamp_utc AS ts, p.amount_aed\nFROM workspace.hackathon.gold_product p\nLEFT JOIN workspace.hackathon.gold_payment y\n  ON p.row_id = y.row_id AND p.customer_id = y.customer_id\nLEFT JOIN workspace.hackathon.gold_customer c\n  ON p.customer_id = c.customer_id\nWHERE c.shipping_city IS NOT NULL\n",
+        "dimensions": [
+          {
+            "name": "region",
+            "expr": "region",
+            "displayName": "Region"
+          },
+          {
+            "name": "month",
+            "expr": "CAST(DATE_TRUNC('MONTH', ts) AS DATE)",
+            "displayName": "Month"
+          }
+        ],
+        "measures": [
+          {
+            "name": "customers",
+            "expr": "COUNT(DISTINCT customer_id)",
+            "displayName": "Customers"
+          },
+          {
+            "name": "distinct_regions",
+            "expr": "COUNT(DISTINCT region)",
+            "displayName": "Regions"
+          },
+          {
+            "name": "orders",
+            "expr": "COUNT(*)",
+            "displayName": "Orders"
+          },
+          {
+            "name": "total_sales",
+            "expr": "SUM(amount_aed)",
+            "displayName": "Sales (AED)",
+            "format": {
+              "type": "currency",
+              "currencyCode": "AED",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          },
+          {
+            "name": "monthly_customers",
+            "expr": "COUNT(DISTINCT customer_id)",
+            "displayName": "Monthly Customers",
+            "window": [
+              {
+                "order": "month",
+                "range": "current"
+              }
+            ]
+          },
+          {
+            "name": "monthly_customers_prev",
+            "expr": "COUNT(DISTINCT customer_id)",
+            "displayName": "Previous Month Customers",
+            "window": [
+              {
+                "order": "month",
+                "range": "current",
+                "offset": "-1 month"
+              }
+            ]
+          },
+          {
+            "name": "customer_growth_mom",
+            "expr": "try_divide(MEASURE(`monthly_customers`) - MEASURE(`monthly_customers_prev`), MEASURE(`monthly_customers_prev`))",
+            "displayName": "Customer Growth MoM",
+            "format": {
+              "type": "percentage",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "top5_customers_orders_returns",
+      "displayName": "Top 5 Customers Orders vs Returns",
+      "config": {
+        "version": "1.1",
+        "source": "WITH per_customer AS (\n  SELECT c.customer_name AS customer,\n         COUNT(*) AS orders,\n         COUNT_IF(p.return_option = 'Yes') AS returns\n  FROM workspace.hackathon.gold_product p\n  INNER JOIN workspace.hackathon.gold_customer c\n    ON p.customer_id = c.customer_id\n  WHERE c.customer_name IS NOT NULL\n  GROUP BY c.customer_name\n),\nranked AS (\n  SELECT customer, orders, returns,\n         ROW_NUMBER() OVER (ORDER BY orders DESC) AS customer_rank\n  FROM per_customer\n)\nSELECT customer, 'Orders' AS metric, orders AS value, customer_rank\nFROM ranked WHERE customer_rank <= 5\nUNION ALL\nSELECT customer, 'Returns' AS metric, returns AS value, customer_rank\nFROM ranked WHERE customer_rank <= 5\n",
+        "dimensions": [
+          {
+            "name": "customer",
+            "expr": "customer",
+            "displayName": "Customer"
+          },
+          {
+            "name": "metric",
+            "expr": "metric",
+            "displayName": "Metric"
+          },
+          {
+            "name": "customer_rank",
+            "expr": "customer_rank"
           }
         ],
         "measures": [
@@ -298,7 +630,7 @@
           },
           "position": {
             "x": 0,
-            "y": 0,
+            "y": 2,
             "width": 3,
             "height": 3
           }
@@ -348,7 +680,7 @@
           },
           "position": {
             "x": 3,
-            "y": 0,
+            "y": 2,
             "width": 2,
             "height": 3
           }
@@ -397,7 +729,7 @@
           },
           "position": {
             "x": 5,
-            "y": 0,
+            "y": 2,
             "width": 2,
             "height": 3
           }
@@ -448,7 +780,7 @@
           },
           "position": {
             "x": 7,
-            "y": 0,
+            "y": 2,
             "width": 3,
             "height": 3
           }
@@ -521,9 +853,158 @@
           },
           "position": {
             "x": 0,
-            "y": 3,
+            "y": 5,
             "width": 12,
             "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_digital_payments_pct",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "digital_payments",
+                  "fields": [
+                    {
+                      "name": "measure(digital_payments_pct)",
+                      "expression": "MEASURE(`digital_payments_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Digital Payments %"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(digital_payments_pct)",
+                  "format": {
+                    "decimalPlaces": {
+                      "places": 2,
+                      "type": "exact"
+                    },
+                    "type": "number-percent"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 10,
+            "y": 2,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "subtitle",
+            "spec": {
+              "widgetType": "text",
+              "version": 1,
+              "encodings": {
+                "text": {
+                  "lines": [
+                    "**Q1 2024 retail sales performance across products, customers, regions, and payments (data: Jan 1 – Feb 6, 2024).**"
+                  ],
+                  "fields": []
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "key_insights",
+            "spec": {
+              "widgetType": "text",
+              "version": 1,
+              "encodings": {
+                "text": {
+                  "lines": [
+                    "**Key Insights**\n",
+                    "\n",
+                    "* Return rate is about 34% in the top 5 categories (33.2%–34.7%) — returns are a business-wide issue, not one category.\n",
+                    "* Dubai and Abu Dhabi hold 42% of customers.\n",
+                    "* Card is 70.65% of payments, and all payments are digital."
+                  ],
+                  "fields": []
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 11,
+            "width": 6,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "recommendations",
+            "spec": {
+              "widgetType": "text",
+              "version": 1,
+              "encodings": {
+                "text": {
+                  "lines": [
+                    "**Recommendations**\n",
+                    "\n",
+                    "* Review return reasons and the return policy, starting with Electronics.\n",
+                    "* Promote high-margin, low-sales categories such as Travel and Sports.\n",
+                    "* Focus marketing on Dubai and Abu Dhabi while growing smaller markets."
+                  ],
+                  "fields": []
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 11,
+            "width": 6,
+            "height": 4
+          }
+        },
+        {
+          "widget": {
+            "name": "footnote",
+            "spec": {
+              "widgetType": "text",
+              "version": 1,
+              "encodings": {
+                "text": {
+                  "lines": [
+                    "*Return rate counts only return_option = 'Yes'; 3,282 orders (32.8%) are 'Unknown'.*"
+                  ],
+                  "fields": []
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 15,
+            "width": 12,
+            "height": 2
           }
         }
       ],
@@ -610,9 +1091,297 @@
           },
           "position": {
             "x": 0,
-            "y": 0,
+            "y": 2,
             "width": 12,
             "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "return_rate_by_product",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "75ae3e61",
+                  "fields": [
+                    {
+                      "name": "merchant_category",
+                      "expression": "`merchant_category`"
+                    },
+                    {
+                      "name": "measure(return_rate_pct)",
+                      "expression": "MEASURE(`return_rate_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Return Rate by Product"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "merchant_category",
+                  "displayName": "merchant_category",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(return_rate_pct)",
+                  "displayName": "return_rate_pct",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "merchant_category",
+                  "displayName": "merchant_category",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "net_sales_by_product",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "75ae3e61",
+                  "fields": [
+                    {
+                      "name": "merchant_category",
+                      "expression": "`merchant_category`"
+                    },
+                    {
+                      "name": "measure(net_sales_after_returns)",
+                      "expression": "MEASURE(`net_sales_after_returns`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Net Sales by Product (AED)"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "merchant_category",
+                  "displayName": "merchant_category",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(net_sales_after_returns)",
+                  "displayName": "net_sales_after_returns",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "merchant_category",
+                  "displayName": "merchant_category",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 8,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "product_performance_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "75ae3e61",
+                  "fields": [
+                    {
+                      "name": "merchant_category",
+                      "expression": "`merchant_category`"
+                    },
+                    {
+                      "name": "measure(count)",
+                      "expression": "MEASURE(`count`)"
+                    },
+                    {
+                      "name": "measure(total_sales)",
+                      "expression": "MEASURE(`total_sales`)"
+                    },
+                    {
+                      "name": "measure(returns_count)",
+                      "expression": "MEASURE(`returns_count`)"
+                    },
+                    {
+                      "name": "measure(return_rate_pct)",
+                      "expression": "MEASURE(`return_rate_pct`)"
+                    },
+                    {
+                      "name": "measure(net_sales_after_returns)",
+                      "expression": "MEASURE(`net_sales_after_returns`)"
+                    },
+                    {
+                      "name": "measure(margin_pct)",
+                      "expression": "MEASURE(`margin_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Product Performance"
+              },
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "merchant_category"
+                  },
+                  {
+                    "fieldName": "measure(count)"
+                  },
+                  {
+                    "fieldName": "measure(total_sales)"
+                  },
+                  {
+                    "fieldName": "measure(returns_count)"
+                  },
+                  {
+                    "fieldName": "measure(return_rate_pct)"
+                  },
+                  {
+                    "fieldName": "measure(net_sales_after_returns)"
+                  },
+                  {
+                    "fieldName": "measure(margin_pct)"
+                  }
+                ]
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 13,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "subtitle",
+            "spec": {
+              "widgetType": "text",
+              "version": 1,
+              "encodings": {
+                "text": {
+                  "lines": [
+                    "**Product-level sales, returns, and retained margin for Q1 2024.**"
+                  ],
+                  "fields": []
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "key_insights",
+            "spec": {
+              "widgetType": "text",
+              "version": 1,
+              "encodings": {
+                "text": {
+                  "lines": [
+                    "**Key Insights**\n",
+                    "\n",
+                    "* Return rate is about 34% in the top 5 categories (33.2%–34.7%) — returns are a business-wide issue, not one category. Electronics has the highest returned value (AED 106,652).\n",
+                    "* Travel keeps the most sales after returns (73.75%) but sells little; Toys keeps the least (61.66%)."
+                  ],
+                  "fields": []
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 19,
+            "width": 12,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "footnotes",
+            "spec": {
+              "widgetType": "text",
+              "version": 1,
+              "encodings": {
+                "text": {
+                  "lines": [
+                    "*Return rate counts only return_option = 'Yes'; 3,282 orders (32.8%) are 'Unknown'.*\n",
+                    "\n",
+                    "*No cost data: margin = net sales after returns / sales.*"
+                  ],
+                  "fields": []
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 22,
+            "width": 12,
+            "height": 2
           }
         }
       ],
@@ -622,12 +1391,1140 @@
     {
       "name": "customers_regions",
       "displayName": "Customers & Regions",
-      "pageType": "PAGE_TYPE_CANVAS"
+      "layout": [
+        {
+          "widget": {
+            "name": "kpi_total_customers",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "customers_regions",
+                  "fields": [
+                    {
+                      "name": "measure(customers)",
+                      "expression": "MEASURE(`customers`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Total Customers"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(customers)",
+                  "format": {
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "places": 0,
+                      "type": "exact"
+                    },
+                    "type": "number-plain"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "customer_base_by_region",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "customers_regions",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "measure(customers)",
+                      "expression": "MEASURE(`customers`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Customer Base by Region"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "region",
+                  "displayName": "region",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(customers)",
+                  "displayName": "customers",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "region",
+                  "displayName": "region",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_regions",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "customers_regions",
+                  "fields": [
+                    {
+                      "name": "measure(distinct_regions)",
+                      "expression": "MEASURE(`distinct_regions`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Regions"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(distinct_regions)",
+                  "format": {
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "places": 0,
+                      "type": "exact"
+                    },
+                    "type": "number-plain"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 2,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "customers_by_month",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "customers_regions",
+                  "fields": [
+                    {
+                      "name": "month",
+                      "expression": "`month`"
+                    },
+                    {
+                      "name": "measure(monthly_customers)",
+                      "expression": "MEASURE(`monthly_customers`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Active Customers by Month"
+              },
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "month",
+                  "displayName": "month",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(monthly_customers)",
+                  "displayName": "monthly_customers",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 5,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_customers_this_month",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "customers_regions",
+                  "fields": [
+                    {
+                      "name": "measure(monthly_customers)",
+                      "expression": "MEASURE(`monthly_customers`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Customers This Month"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(monthly_customers)",
+                  "format": {
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "places": 0,
+                      "type": "exact"
+                    },
+                    "type": "number-plain"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 2,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "sales_by_region",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "customers_regions",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "measure(total_sales)",
+                      "expression": "MEASURE(`total_sales`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Sales by Region (AED)"
+              },
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "region",
+                  "displayName": "region",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(total_sales)",
+                  "displayName": "total_sales",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "region",
+                  "displayName": "region",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 10,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_customer_growth_mom",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "customers_regions",
+                  "fields": [
+                    {
+                      "name": "measure(customer_growth_mom)",
+                      "expression": "MEASURE(`customer_growth_mom`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Customer Growth MoM"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(customer_growth_mom)",
+                  "format": {
+                    "decimalPlaces": {
+                      "places": 2,
+                      "type": "exact"
+                    },
+                    "type": "number-percent"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 2,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "region_performance_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "customers_regions",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "measure(customers)",
+                      "expression": "MEASURE(`customers`)"
+                    },
+                    {
+                      "name": "measure(orders)",
+                      "expression": "MEASURE(`orders`)"
+                    },
+                    {
+                      "name": "measure(total_sales)",
+                      "expression": "MEASURE(`total_sales`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Region Performance"
+              },
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "region"
+                  },
+                  {
+                    "fieldName": "measure(customers)"
+                  },
+                  {
+                    "fieldName": "measure(orders)"
+                  },
+                  {
+                    "fieldName": "measure(total_sales)"
+                  }
+                ]
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 10,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "top5_customers_orders_returns",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "top5_customers_orders_returns",
+                  "fields": [
+                    {
+                      "name": "metric",
+                      "expression": "`metric`"
+                    },
+                    {
+                      "name": "customer",
+                      "expression": "`customer`"
+                    },
+                    {
+                      "name": "measure(total_value)",
+                      "expression": "MEASURE(`total_value`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Top 5 Customers: Orders vs Returns"
+              },
+              "version": 3,
+              "mark": {
+                "layout": "group"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "customer",
+                  "displayName": "Customer",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "y-reversed"
+                    }
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(total_value)",
+                  "displayName": "Count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "metric",
+                  "displayName": "Metric",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 15,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "subtitle",
+            "spec": {
+              "widgetType": "text",
+              "version": 1,
+              "encodings": {
+                "text": {
+                  "lines": [
+                    "**Customer base, regional distribution, and month-over-month customer growth for Q1 2024.**"
+                  ],
+                  "fields": []
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "key_insights",
+            "spec": {
+              "widgetType": "text",
+              "version": 1,
+              "encodings": {
+                "text": {
+                  "lines": [
+                    "**Key Insights**\n",
+                    "\n",
+                    "* Dubai and Abu Dhabi hold 42% of customers."
+                  ],
+                  "fields": []
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 21,
+            "width": 12,
+            "height": 3
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
     },
     {
       "name": "payments_growth",
       "displayName": "Payments & Growth",
-      "pageType": "PAGE_TYPE_CANVAS"
+      "layout": [
+        {
+          "widget": {
+            "name": "kpi_digital_pct_count",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "digital_payments",
+                  "fields": [
+                    {
+                      "name": "measure(digital_count_pct)",
+                      "expression": "MEASURE(`digital_count_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Digital Payments % (by Count)"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(digital_count_pct)",
+                  "format": {
+                    "decimalPlaces": {
+                      "places": 2,
+                      "type": "exact"
+                    },
+                    "type": "number-percent"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 2,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_mom_growth",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "digital_payments",
+                  "fields": [
+                    {
+                      "name": "measure(mom_growth_pct)",
+                      "expression": "MEASURE(`mom_growth_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Sales Growth MoM"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(mom_growth_pct)",
+                  "format": {
+                    "decimalPlaces": {
+                      "places": 2,
+                      "type": "exact"
+                    },
+                    "type": "number-percent"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 2,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_latest_month_sales",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "digital_payments",
+                  "fields": [
+                    {
+                      "name": "measure(monthly_sales)",
+                      "expression": "MEASURE(`monthly_sales`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Latest Month Sales (AED)"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(monthly_sales)",
+                  "format": {
+                    "abbreviation": "none",
+                    "currencyCode": "AED",
+                    "decimalPlaces": {
+                      "places": 2,
+                      "type": "exact"
+                    },
+                    "type": "number-currency"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 2,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "digital_pct_trend_by_month",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "digital_payments",
+                  "fields": [
+                    {
+                      "name": "month",
+                      "expression": "`month`"
+                    },
+                    {
+                      "name": "measure(digital_payments_pct)",
+                      "expression": "MEASURE(`digital_payments_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Digital Payments % Trend by Month"
+              },
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "month",
+                  "displayName": "month",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(digital_payments_pct)",
+                  "displayName": "digital_payments_pct",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 5,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "sales_trend_by_month",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "digital_payments",
+                  "fields": [
+                    {
+                      "name": "month",
+                      "expression": "`month`"
+                    },
+                    {
+                      "name": "measure(total_amount)",
+                      "expression": "MEASURE(`total_amount`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Sales Trend by Month (AED)"
+              },
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "month",
+                  "displayName": "month",
+                  "scale": {
+                    "type": "temporal"
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(total_amount)",
+                  "displayName": "total_amount",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 5,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "payment_method_share",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "digital_payments",
+                  "fields": [
+                    {
+                      "name": "measure(total_amount)",
+                      "expression": "MEASURE(`total_amount`)"
+                    },
+                    {
+                      "name": "payment_method",
+                      "expression": "`payment_method`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Payment Method Share (AED)"
+              },
+              "version": 3,
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "measure(total_amount)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "total_amount"
+                },
+                "color": {
+                  "fieldName": "payment_method",
+                  "displayName": "payment_method",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 10,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "monthly_sales_growth_table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "digital_payments",
+                  "fields": [
+                    {
+                      "name": "month",
+                      "expression": "`month`"
+                    },
+                    {
+                      "name": "measure(count)",
+                      "expression": "MEASURE(`count`)"
+                    },
+                    {
+                      "name": "measure(total_amount)",
+                      "expression": "MEASURE(`total_amount`)"
+                    },
+                    {
+                      "name": "measure(monthly_sales_prev)",
+                      "expression": "MEASURE(`monthly_sales_prev`)"
+                    },
+                    {
+                      "name": "measure(mom_growth_pct)",
+                      "expression": "MEASURE(`mom_growth_pct`)"
+                    },
+                    {
+                      "name": "measure(digital_payments_pct)",
+                      "expression": "MEASURE(`digital_payments_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Monthly Sales & Growth"
+              },
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "month"
+                  },
+                  {
+                    "fieldName": "measure(count)"
+                  },
+                  {
+                    "fieldName": "measure(total_amount)"
+                  },
+                  {
+                    "fieldName": "measure(monthly_sales_prev)"
+                  },
+                  {
+                    "fieldName": "measure(mom_growth_pct)"
+                  },
+                  {
+                    "fieldName": "measure(digital_payments_pct)"
+                  }
+                ]
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 10,
+            "width": 6,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_linked_orders",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "digital_payments",
+                  "fields": [
+                    {
+                      "name": "measure(count)",
+                      "expression": "MEASURE(`count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Linked Orders"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(count)",
+                  "format": {
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "places": 0,
+                      "type": "exact"
+                    },
+                    "type": "number-plain"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 2,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "subtitle",
+            "spec": {
+              "widgetType": "text",
+              "version": 1,
+              "encodings": {
+                "text": {
+                  "lines": [
+                    "**Payment method mix, digital adoption, and monthly sales growth for Q1 2024.**"
+                  ],
+                  "fields": []
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "key_insights",
+            "spec": {
+              "widgetType": "text",
+              "version": 1,
+              "encodings": {
+                "text": {
+                  "lines": [
+                    "**Key Insights**\n",
+                    "\n",
+                    "* Card is 70.65% of payments, and all payments are digital."
+                  ],
+                  "fields": []
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 15,
+            "width": 12,
+            "height": 3
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "global_filters",
+      "displayName": "Global Filters",
+      "layout": [
+        {
+          "widget": {
+            "name": "filter_product_category",
+            "queries": [
+              {
+                "name": "dashboards/01f1e271d4401b289e5156ca5405b67f/datasets/01f1e274aeaf19dba553f51872450b22_merchant_category",
+                "query": {
+                  "datasetName": "75ae3e61",
+                  "fields": [
+                    {
+                      "name": "merchant_category",
+                      "expression": "`merchant_category`"
+                    },
+                    {
+                      "name": "merchant_category_associativity",
+                      "expression": "COUNT_IF(`associative_filter_predicate_group`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "showTitle": true,
+                "title": "Product Category"
+              },
+              "widgetType": "filter-single-select",
+              "encodings": {
+                "fields": [
+                  {
+                    "fieldName": "merchant_category",
+                    "queryName": "dashboards/01f1e271d4401b289e5156ca5405b67f/datasets/01f1e274aeaf19dba553f51872450b22_merchant_category"
+                  }
+                ]
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 1,
+            "height": 2
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
     }
   ],
   "uiSettings": {
