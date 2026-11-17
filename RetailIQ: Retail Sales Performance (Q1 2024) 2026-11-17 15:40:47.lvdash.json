@@ -1,0 +1,645 @@
+{
+  "datasets": [
+    {
+      "name": "1615f3a7",
+      "displayName": "bronze_customer",
+      "config": {
+        "version": "1.1",
+        "source": "workspace.hackathon.bronze_customer",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "c299058a",
+      "displayName": "bronze_payment",
+      "config": {
+        "version": "1.1",
+        "source": "workspace.hackathon.bronze_payment"
+      }
+    },
+    {
+      "name": "b50bc16c",
+      "displayName": "bronze_product",
+      "config": {
+        "version": "1.1",
+        "source": "workspace.hackathon.bronze_product"
+      }
+    },
+    {
+      "name": "b857fbaf",
+      "displayName": "gold_customer",
+      "config": {
+        "version": "1.1",
+        "source": "workspace.hackathon.gold_customer",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "784fc5f5",
+      "displayName": "gold_customer_rejected",
+      "config": {
+        "version": "1.1",
+        "source": "workspace.hackathon.gold_customer_rejected",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "aec0522d",
+      "displayName": "gold_payment",
+      "config": {
+        "version": "1.1",
+        "source": "workspace.hackathon.gold_payment"
+      }
+    },
+    {
+      "name": "9af6cff4",
+      "displayName": "gold_payment_rejected",
+      "config": {
+        "version": "1.1",
+        "source": "workspace.hackathon.gold_payment_rejected"
+      }
+    },
+    {
+      "name": "75ae3e61",
+      "displayName": "gold_product",
+      "config": {
+        "version": "1.1",
+        "source": "workspace.hackathon.gold_product",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          },
+          {
+            "name": "total_sales",
+            "expr": "SUM(amount_aed)",
+            "format": {
+              "type": "currency",
+              "currencyCode": "AED",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          },
+          {
+            "name": "returns_count",
+            "expr": "COUNT_IF(return_option = 'Yes')",
+            "displayName": "Returns"
+          },
+          {
+            "name": "return_rate_pct",
+            "expr": "try_divide(COUNT_IF(return_option = 'Yes'), COUNT(*))",
+            "displayName": "Return Rate %",
+            "format": {
+              "type": "percentage",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          },
+          {
+            "name": "net_sales_after_returns",
+            "expr": "SUM(CASE WHEN return_option = 'Yes' THEN 0 ELSE amount_aed END)",
+            "format": {
+              "type": "currency",
+              "currencyCode": "AED",
+              "decimalPlaces": {
+                "type": "exact",
+                "places": 2.0
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "0ca1b157",
+      "displayName": "gold_product_rejected",
+      "config": {
+        "version": "1.1",
+        "source": "workspace.hackathon.gold_product_rejected",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "dc91365b",
+      "displayName": "silver_customer",
+      "config": {
+        "version": "1.1",
+        "source": "workspace.hackathon.silver_customer"
+      }
+    },
+    {
+      "name": "4ecddebb",
+      "displayName": "silver_payment",
+      "config": {
+        "version": "1.1",
+        "source": "workspace.hackathon.silver_payment"
+      }
+    },
+    {
+      "name": "3c1fe71f",
+      "displayName": "silver_product",
+      "config": {
+        "version": "1.1",
+        "source": "workspace.hackathon.silver_product",
+        "dimensions": [
+          {
+            "expr": "source.*"
+          }
+        ],
+        "measures": [
+          {
+            "name": "count",
+            "expr": "COUNT(*)",
+            "comment": "Represents the total number of rows in the dataset. Use this measure to count all",
+            "displayName": "Count"
+          }
+        ]
+      }
+    },
+    {
+      "name": "top5_products_orders_returns",
+      "displayName": "Top 5 Products Orders vs Returns",
+      "config": {
+        "version": "1.1",
+        "source": "WITH per_product AS (\n  SELECT merchant_category AS product,\n         COUNT(*) AS orders,\n         COUNT_IF(return_option = 'Yes') AS returns\n  FROM workspace.hackathon.gold_product\n  GROUP BY merchant_category\n),\nranked AS (\n  SELECT product, orders, returns,\n         ROW_NUMBER() OVER (ORDER BY orders DESC) AS product_rank\n  FROM per_product\n)\nSELECT product, 'Orders' AS metric, orders AS value, product_rank\nFROM ranked WHERE product_rank <= 5\nUNION ALL\nSELECT product, 'Returns' AS metric, returns AS value, product_rank\nFROM ranked WHERE product_rank <= 5\n",
+        "dimensions": [
+          {
+            "name": "product",
+            "expr": "product",
+            "displayName": "Product"
+          },
+          {
+            "name": "metric",
+            "expr": "metric",
+            "displayName": "Metric"
+          },
+          {
+            "name": "product_rank",
+            "expr": "product_rank"
+          }
+        ],
+        "measures": [
+          {
+            "name": "total_value",
+            "expr": "SUM(value)",
+            "displayName": "Count"
+          }
+        ]
+      }
+    }
+  ],
+  "pages": [
+    {
+      "name": "executive_summary",
+      "displayName": "Executive Summary",
+      "layout": [
+        {
+          "widget": {
+            "name": "kpi_total_sales",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "75ae3e61",
+                  "fields": [
+                    {
+                      "name": "measure(total_sales)",
+                      "expression": "MEASURE(`total_sales`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Total Sales (AED)"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(total_sales)",
+                  "format": {
+                    "abbreviation": "none",
+                    "currencyCode": "AED",
+                    "decimalPlaces": {
+                      "places": 2,
+                      "type": "exact"
+                    },
+                    "type": "number-currency"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_total_orders",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "75ae3e61",
+                  "fields": [
+                    {
+                      "name": "measure(count)",
+                      "expression": "MEASURE(`count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Total Orders"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(count)",
+                  "format": {
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "places": 0,
+                      "type": "exact"
+                    },
+                    "type": "number-plain"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 0,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_return_rate",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "75ae3e61",
+                  "fields": [
+                    {
+                      "name": "measure(return_rate_pct)",
+                      "expression": "MEASURE(`return_rate_pct`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Return Rate %"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(return_rate_pct)",
+                  "format": {
+                    "decimalPlaces": {
+                      "places": 2,
+                      "type": "exact"
+                    },
+                    "type": "number-percent"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 5,
+            "y": 0,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "kpi_net_sales",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "75ae3e61",
+                  "fields": [
+                    {
+                      "name": "measure(net_sales_after_returns)",
+                      "expression": "MEASURE(`net_sales_after_returns`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Net Sales After Returns (AED)"
+              },
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "measure(net_sales_after_returns)",
+                  "format": {
+                    "abbreviation": "none",
+                    "currencyCode": "AED",
+                    "decimalPlaces": {
+                      "places": 2,
+                      "type": "exact"
+                    },
+                    "type": "number-currency"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 7,
+            "y": 0,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "sales_by_category",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "75ae3e61",
+                  "fields": [
+                    {
+                      "name": "merchant_category",
+                      "expression": "`merchant_category`"
+                    },
+                    {
+                      "name": "measure(total_sales)",
+                      "expression": "MEASURE(`total_sales`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Sales by Product Category (AED)"
+              },
+              "version": 3,
+              "mark": {
+                "colors": [
+                  "#2272B4"
+                ]
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "merchant_category",
+                  "displayName": "Product Category",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "y-reversed"
+                    }
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(total_sales)",
+                  "format": {
+                    "abbreviation": "none",
+                    "decimalPlaces": {
+                      "places": 0,
+                      "type": "exact"
+                    },
+                    "type": "number-plain"
+                  },
+                  "displayName": "Sales (AED)",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 12,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "d9215273",
+      "displayName": "Products & Returns",
+      "layout": [
+        {
+          "widget": {
+            "name": "top5_products_orders_returns",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "top5_products_orders_returns",
+                  "fields": [
+                    {
+                      "name": "metric",
+                      "expression": "`metric`"
+                    },
+                    {
+                      "name": "product",
+                      "expression": "`product`"
+                    },
+                    {
+                      "name": "measure(total_value)",
+                      "expression": "MEASURE(`total_value`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "frame": {
+                "showTitle": true,
+                "title": "Top 5 Products: Orders vs Returns"
+              },
+              "version": 3,
+              "mark": {
+                "layout": "group"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "product",
+                  "displayName": "Product",
+                  "scale": {
+                    "type": "categorical",
+                    "sort": {
+                      "by": "custom-order",
+                      "orderedValues": [
+                        "Fashion",
+                        "Electronics",
+                        "Groceries",
+                        "Digital Goods",
+                        "Home & Furniture"
+                      ]
+                    }
+                  }
+                },
+                "y": {
+                  "fieldName": "measure(total_value)",
+                  "displayName": "Count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "metric",
+                  "displayName": "Metric",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              },
+              "data": {
+                "queryName": "main_query"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 6
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "customers_regions",
+      "displayName": "Customers & Regions",
+      "pageType": "PAGE_TYPE_CANVAS"
+    },
+    {
+      "name": "payments_growth",
+      "displayName": "Payments & Growth",
+      "pageType": "PAGE_TYPE_CANVAS"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "widgetHeaderAlignment": "ALIGNMENT_UNSPECIFIED",
+      "fontSettings": {
+        "widgetTitle": {
+          "fontSize": 18,
+          "fontWeight": 700
+        }
+      }
+    },
+    "applyModeEnabled": false
+  }
+}
