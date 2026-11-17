@@ -35,3 +35,4 @@ finally:
         connection.close()
         print("Connection closed.")
 
+print('ok')
